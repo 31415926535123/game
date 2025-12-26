@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Canvas</title>
+    <link href="src/output.css" rel="stylesheet" />
+  </head>
+  <body class="flex h-screen flex-1 gap-5 text-gray-900">
+    <!-- 左侧工具栏 -->
+    <div class="flex flex-col gap-4">
+      <div
+        id="toolsContainer"
+        class="w-50 border-r border-gray-300 p-4 rounded-lg grid grid-cols-2 gap-1"
+      >
+        <!-- 工具按钮将通过JavaScript动态生成 -->
+      </div>
+
+      <!-- 画布设置面板 -->
+      <div
+        id="canvasSettingsPanel"
+        class="w-50 border-r border-gray-300 p-4 rounded-lg bg-white shadow-md"
+      >
+        <h3 class="text-sm font-semibold mb-3 text-gray-700">画布设置</h3>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-gray-600">X:</label>
+            <input
+              type="number"
+              id="canvasX"
+              value="0"
+              class="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-gray-600">Y:</label>
+            <input
+              type="number"
+              id="canvasY"
+              value="0"
+              class="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-gray-600">宽度:</label>
+            <input
+              type="number"
+              id="canvasWidth"
+              value="400"
+              class="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-gray-600">高度:</label>
+            <input
+              type="number"
+              id="canvasHeight"
+              value="400"
+              class="w-16 px-2 py-1 text-xs border border-gray-300 rounded"
+            />
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-xs text-gray-600">ViewBox:</label>
+            <input
+              type="text"
+              id="canvasViewBox"
+              value="0 0 400 400"
+              class="w-24 px-2 py-1 text-xs border border-gray-300 rounded"
+            />
+          </div>
+          <button
+            id="applyCanvasSettings"
+            class="w-full mt-2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+          >
+            应用设置
+          </button>
+        </div>
+      </div>
+
+      <!-- 颜色选择器 -->
+      <div class="p-3 rounded-lg shadow-md transition-theme">
+        <!-- 自定义颜色输入 -->
+        <input
+          type="color"
+          id="customColor"
+          class="w-full h-10 mt-2 rounded cursor-pointer"
+          value="#000000"
+        />
+      </div>
+    </div>
+
+    <!-- 内容区：中间画布 + 右侧代码区 -->
+    <div style="position: relative; flex: 1; overflow: auto">
+      <!-- 中间SVG画布区（包含背景板） -->
+      <div id="svgCanvasContainer" style="position: absolute">
+        <!-- 现有SVG画布 -->
+        <svg
+          id="svgCanvas"
+          xmlns="http://www.w3.org/2000/svg"
+          x="0"
+          y="0"
+          width="400"
+          height="400"
+          viewBox="0 0 400 400"
+        ></svg>
+      </div>
+    </div>
+    <!-- 右侧代码区（默认折叠） -->
+    <div id="codeSection" class="flex flex-col transition-all duration-300">
+      <div class="flex gap-2 mb-2">
+        <button
+          id="toggleCodeBtn"
+          class="w-12 h-12 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md"
+        >
+          展开代码
+        </button>
+        <button
+          id="loadBtn"
+          class="w-12 h-12 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
+        >
+          加载代码
+        </button>
+        <button
+          class="w-12 h-12 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white text-sm rounded-md transition-colors"
+          id="downloadBtn"
+        >
+          下载
+        </button>
+        <input
+          type="color"
+          id="bgColorPicker"
+          class="w-10 h-10 rounded cursor-pointer"
+          value="#FFFFFF"
+        />
+      </div>
+      <textarea
+        id="svgCode"
+        class="w-full h-full min-h-[400px] px-3 py-2 border border-blue-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs resize-none overflow-auto hidden"
+      ></textarea>
+    </div>
+
+    <script type="module" src="js/index.js"></script>
+  </body>
+</html>

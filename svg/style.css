@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial;
+  background: #f0f0f0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  filter: invert(1) hue-rotate(180deg);
+}
+#canvas {
+  background: white;
+  border: 1px solid #ccc;
+  cursor: crosshair;
+  flex: 1;
+  width: clamp(300px, 100vw, 100vw);
+  height: clamp(200px, calc(100vh - 40px), calc(100vh - 40px));
+  box-sizing: border-box;
+}
+#status {
+  padding: clamp(5px, 2vh, 15px);
+  background: #e0e0e0;
+  min-height: 30px;
+  box-sizing: border-box;
+}

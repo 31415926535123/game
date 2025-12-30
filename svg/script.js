@@ -18,17 +18,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   canvas.addEventListener("drawingstart", (e) => {
     const { mode, startX, startY } = e.detail;
-    status.textContent = `Drawing ${MODE_TEXT[mode]} from (${startX}, ${startY})`;
+    status.textContent = `Drawing ${MODE_TEXT[mode]} from (${Math.round(
+      startX
+    )}, ${Math.round(startY)})`;
   });
 
   canvas.addEventListener("drawing", (e) => {
     const { mode, startX, startY, endX, endY } = e.detail;
-    status.textContent = `Drawing ${MODE_TEXT[mode]} from (${startX}, ${startY}) to (${endX}, ${endY})`;
+    status.textContent = `Drawing ${MODE_TEXT[mode]} from (${Math.round(
+      startX
+    )}, ${Math.round(startY)}) to (${Math.round(endX)}, ${Math.round(endY)})`;
   });
 
   canvas.addEventListener("drawingend", (e) => {
     const { mode, startX, startY, endX, endY } = e.detail;
-    status.textContent = `Drew ${MODE_TEXT[mode]} from (${startX}, ${startY}) to (${endX}, ${endY})`;
+    status.textContent = `Mode: ${
+      MODE_TEXT[mode]
+    }. Press 'r' for rect, 'l' for line, 'c' for circle, 'e' for ellipse, 'p' for polyline. ${
+      mode === "polyline" ? "Click to add points, Ctrl+C to finish." : ""
+    }`;
   });
 
   canvas.addEventListener("modechange", (e) => {

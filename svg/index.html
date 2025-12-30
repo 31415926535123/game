@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SVG Line Drawing Tool</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -8,5 +9,17 @@
     <div id="status">Click and drag to draw lines</div>
     <svg id="canvas"></svg>
     <script type="module" src="script.js"></script>
+    <script>
+      document.addEventListener(
+        "touchmove",
+        function (e) {
+          // 判断是否在页面顶部下拉
+          if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+            e.preventDefault();
+          }
+        },
+        { passive: false }
+      );
+    </script>
   </body>
 </html>

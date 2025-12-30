@@ -13,6 +13,17 @@ export function initVirtualJoystick() {
     z-index: 1000;
   `;
 
+  // 添加媒体查询样式
+  const style = document.createElement("style");
+  style.textContent = `
+    @media (max-width: 768px) {
+      #virtual-joystick {
+        display: block !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
   const knob = document.createElement("div");
   knob.style.cssText = `
     position: absolute;
@@ -31,16 +42,6 @@ export function initVirtualJoystick() {
 
   let isDragging = false;
   let currentDirection = null;
-
-  function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    );
-  }
-
-  if (isMobileDevice()) {
-    joystick.style.display = "block";
-  }
 
   function handleStart(e) {
     isDragging = true;

@@ -1,10 +1,33 @@
-export function initVirtualJoystick() {
+export function initVirtualJoystick(directionToKeyMap, options = {}) {
+  const {
+    id = "virtual-joystick",
+    position = "bottom-left",
+    keyLabels = [],
+    altKey = false,
+    ctrlKey = false,
+  } = options;
   const joystick = document.createElement("div");
-  joystick.id = "virtual-joystick";
+  joystick.id = id;
+
+  // 设置摇杆位置
+  let bottom = "20px";
+  let left = "20px";
+  let right = "auto";
+
+  if (position === "bottom-right") {
+    left = "auto";
+    right = "20px";
+  } else if (position === "bottom-center") {
+    left = "50%";
+    right = "auto";
+    joystick.style.transform = "translateX(-50%)";
+  }
+
   joystick.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    bottom: ${bottom};
+    left: ${left};
+    right: ${right};
     width: 120px;
     height: 120px;
     background: rgba(0, 0, 0, 0.3);
@@ -14,15 +37,19 @@ export function initVirtualJoystick() {
   `;
 
   // 添加媒体查询样式
-  const style = document.createElement("style");
-  style.textContent = `
-    @media (max-width: 768px) {
-      #virtual-joystick {
-        display: block !important;
+  const styleId = `${id}-style`;
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      @media (max-width: 768px) {
+        #${id} {
+          display: block !important;
+        }
       }
-    }
-  `;
-  document.head.appendChild(style);
+    `;
+    document.head.appendChild(style);
+  }
 
   const knob = document.createElement("div");
   knob.style.cssText = `
@@ -38,6 +65,47 @@ export function initVirtualJoystick() {
   `;
 
   joystick.appendChild(knob);
+
+  // 添加键位标签
+  if (keyLabels.length > 0) {
+    const directions = ["up", "down", "left", "right"];
+    directions.forEach((direction, index) => {
+      const label = document.createElement("div");
+      label.className = `joystick-label ${direction}`;
+      label.textContent = keyLabels[index] || "";
+      label.style.cssText = `
+        position: absolute;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 1px 1px 2px black;
+        pointer-events: none;
+        z-index: 1001;
+      `;
+
+      // 设置标签位置
+      if (direction === "up") {
+        label.style.top = "5px";
+        label.style.left = "50%";
+        label.style.transform = "translateX(-50%)";
+      } else if (direction === "down") {
+        label.style.bottom = "5px";
+        label.style.left = "50%";
+        label.style.transform = "translateX(-50%)";
+      } else if (direction === "left") {
+        label.style.left = "5px";
+        label.style.top = "50%";
+        label.style.transform = "translateY(-50%)";
+      } else if (direction === "right") {
+        label.style.right = "5px";
+        label.style.top = "50%";
+        label.style.transform = "translateY(-50%)";
+      }
+
+      joystick.appendChild(label);
+    });
+  }
+
   document.body.appendChild(joystick);
 
   let isDragging = false;
@@ -91,17 +159,39 @@ export function initVirtualJoystick() {
 
     if (newDirection !== currentDirection) {
       if (currentDirection) {
-        const keyUpEvent = new KeyboardEvent("keyup", {
-          key: getArrowKey(currentDirection),
-        });
-        document.dispatchEvent(keyUpEvent);
+        const keyConfig = directionToKeyMap[currentDirection] || "";
+        const key = typeof keyConfig === "object" ? keyConfig.key : keyConfig;
+        const keyAltKey =
+          typeof keyConfig === "object" ? keyConfig.altKey : altKey;
+        const keyCtrlKey =
+          typeof keyConfig === "object" ? keyConfig.ctrlKey : ctrlKey;
+
+        if (key) {
+          const keyUpEvent = new KeyboardEvent("keyup", {
+            key: key,
+            altKey: keyAltKey,
+            ctrlKey: keyCtrlKey,
+          });
+          document.dispatchEvent(keyUpEvent);
+        }
       }
 
       if (newDirection) {
-        const keyDownEvent = new KeyboardEvent("keydown", {
-          key: getArrowKey(newDirection),
-        });
-        document.dispatchEvent(keyDownEvent);
+        const keyConfig = directionToKeyMap[newDirection] || "";
+        const key = typeof keyConfig === "object" ? keyConfig.key : keyConfig;
+        const keyAltKey =
+          typeof keyConfig === "object" ? keyConfig.altKey : altKey;
+        const keyCtrlKey =
+          typeof keyConfig === "object" ? keyConfig.ctrlKey : ctrlKey;
+
+        if (key) {
+          const keyDownEvent = new KeyboardEvent("keydown", {
+            key: key,
+            altKey: keyAltKey,
+            ctrlKey: keyCtrlKey,
+          });
+          document.dispatchEvent(keyDownEvent);
+        }
       }
 
       currentDirection = newDirection;
@@ -115,26 +205,22 @@ export function initVirtualJoystick() {
     knob.style.transform = "translate(-50%, -50%)";
 
     if (currentDirection) {
-      const keyUpEvent = new KeyboardEvent("keyup", {
-        key: getArrowKey(currentDirection),
-      });
-      document.dispatchEvent(keyUpEvent);
-      currentDirection = null;
-    }
-  }
+      const keyConfig = directionToKeyMap[currentDirection] || "";
+      const key = typeof keyConfig === "object" ? keyConfig.key : keyConfig;
+      const keyAltKey =
+        typeof keyConfig === "object" ? keyConfig.altKey : altKey;
+      const keyCtrlKey =
+        typeof keyConfig === "object" ? keyConfig.ctrlKey : ctrlKey;
 
-  function getArrowKey(direction) {
-    switch (direction) {
-      case "up":
-        return "l";
-      case "down":
-        return "r";
-      case "left":
-        return "c";
-      case "right":
-        return "e";
-      default:
-        return "";
+      if (key) {
+        const keyUpEvent = new KeyboardEvent("keyup", {
+          key: key,
+          altKey: keyAltKey,
+          ctrlKey: keyCtrlKey,
+        });
+        document.dispatchEvent(keyUpEvent);
+      }
+      currentDirection = null;
     }
   }
 

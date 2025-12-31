@@ -4,7 +4,9 @@ export function initDrawing(canvas) {
     startY,
     currentShape,
     drawMode = "line",
-    polylinePoints = []; // 存储折线的点
+    polylinePoints = [], // 存储折线的点
+    bezierPoints = { 1: null, 2: null, 3: null }, // 存储贝塞尔曲线的点，使用数字索引
+    selectedBezierPoint = 1; // 当前选中的贝塞尔曲线点，默认为1
 
   const setAttributes = (el, attrs) => {
     Object.entries(attrs).forEach(([key, value]) =>
@@ -116,7 +118,7 @@ export function initDrawing(canvas) {
       start: (x, y) => {
         if (polylinePoints.length === 0) {
           // 只在开始新的折线时初始化
-          polylinePoints = [`${x},${y}`];
+          polylinePoints = [`${x},${y}`, `${x},${y}`];
           currentShape = createSVGElement("polyline", {
             stroke: "black",
             "stroke-width": "2",
@@ -124,40 +126,110 @@ export function initDrawing(canvas) {
             points: polylinePoints.join(" "),
           });
           canvas.appendChild(currentShape);
+          return;
         }
-        // 如果数组非空，什么都不做，让 draw 方法处理点的添加
+        polylinePoints.push(`${x},${y}`);
       },
       draw: (x, y) => {
         // 显示从最后一个点到当前鼠标位置的预览线
-        const previewPoints = [...polylinePoints, `${x},${y}`];
+        polylinePoints.pop();
+        polylinePoints.push(`${x},${y}`);
         setAttributes(currentShape, {
-          points: previewPoints.join(" "),
+          points: polylinePoints.join(" "),
         });
       },
-      finish: () => {
-        polylinePoints = [];
+    },
+    quadraticBezier: {
+      start: (x, y) => {
+        // 如果当前选中的点不存在，则创建它
+        if (!bezierPoints[selectedBezierPoint]) {
+          bezierPoints[selectedBezierPoint] = `${x},${y}`;
+        }
+
+        // 创建或更新路径
+        if (!currentShape) {
+          currentShape = createSVGElement("path", {
+            stroke: "black",
+            "stroke-width": "2",
+            fill: "none",
+          });
+          canvas.appendChild(currentShape);
+        }
+
+        // 更新路径显示
+        updateBezierPath();
+
+        // 只有在点数小于3时才自动切换到下一个点
+        // 这样当三个点都存在时，用户可以专注编辑当前选中的点
+        const pointCount = Object.values(bezierPoints).filter(Boolean).length;
+        if (pointCount < 3) {
+          // 自动切换到下一个点，循环1→2→3→1
+          selectedBezierPoint = (selectedBezierPoint % 3) + 1;
+        }
+      },
+      draw: (x, y) => {
+        // 更新当前选中点的位置
+        bezierPoints[selectedBezierPoint] = `${x},${y}`;
+
+        // 更新路径显示
+        updateBezierPath();
       },
     },
   };
 
+  // 更新贝塞尔曲线路径的辅助函数
+  function updateBezierPath() {
+    if (!currentShape) return;
+
+    const p1 = bezierPoints[1];
+    const p2 = bezierPoints[2];
+    const p3 = bezierPoints[3];
+
+    if (p1 && p2 && p3) {
+      // 三个点都存在，绘制完整的贝塞尔曲线
+      const [x1, y1] = p1.split(",");
+      const [x2, y2] = p2.split(",");
+      const [x3, y3] = p3.split(",");
+      setAttributes(currentShape, {
+        d: `M ${x1},${y1} Q ${x2},${y2} ${x3},${y3}`,
+      });
+    } else if (p1 && p2) {
+      // 只有两个点，绘制直线
+      const [x1, y1] = p1.split(",");
+      const [x2, y2] = p2.split(",");
+      setAttributes(currentShape, {
+        d: `M ${x1},${y1} L ${x2},${y2}`,
+      });
+    } else if (p1) {
+      // 只有一个点，绘制一个点
+      const [x1, y1] = p1.split(",");
+      setAttributes(currentShape, {
+        d: `M ${x1},${y1} L ${x1},${y1}`,
+      });
+    }
+  }
+
   function startDrawing(e) {
     if (drawMode === "polyline") {
       // 折线模式：每次点击添加一个点
-      if (polylinePoints.length === 0) {
+      if (1) {
         // 第一个点，初始化折线
         drawFunctions[drawMode].start(e.offsetX, e.offsetY);
       } else {
         // 后续点，直接添加到折线
-        polylinePoints.push(`${e.offsetX},${e.offsetY}`);
+        /*polylinePoints.push(`${e.offsetX},${e.offsetY}`);
         setAttributes(currentShape, {
           points: polylinePoints.join(" "),
-        });
+        });*/
       }
       canvas.dispatchEvent(
         new CustomEvent("drawingstart", {
           detail: { startX: e.offsetX, startY: e.offsetY, mode: drawMode },
         })
       );
+    } else if (drawMode === "quadraticBezier") {
+      // 贝塞尔曲线模式：数字键选择点，鼠标移动调整位置
+      drawFunctions[drawMode].start(e.offsetX, e.offsetY);
     } else {
       // 其他图形模式：传统拖拽绘制
       drawing = true;
@@ -178,6 +250,10 @@ export function initDrawing(canvas) {
     if (drawMode === "polyline") {
       // 折线模式：使用第一个点作为起始坐标
       [currentStartX, currentStartY] = polylinePoints[0].split(",");
+    } else if (drawMode === "quadraticBezier") {
+      // 贝塞尔曲线模式：使用第一个点作为起始坐标
+      if (!bezierPoints[1]) return; // 还没有起点，不绘制
+      [currentStartX, currentStartY] = bezierPoints[1].split(",");
     } else {
       // 其他图形模式：使用拖拽起始点
       if (!drawing) return;
@@ -203,10 +279,11 @@ export function initDrawing(canvas) {
   }
 
   function stopDrawing() {
-    // 折线模式：mouseup 不结束绘制，只是更新预览
+    // 折线模式和贝塞尔曲线模式：mouseup 不结束绘制，只是更新预览
     // 折线需要通过 Ctrl+C 结束
-    if (drawMode === "polyline") return;
-
+    if (drawMode === "quadraticBezier") return;
+    if (drawMode === "polyline") {
+    }
     // 其他图形模式：mouseup 结束绘制
     drawing = false;
     canvas.dispatchEvent(
@@ -230,6 +307,8 @@ export function initDrawing(canvas) {
     E: "ellipse",
     p: "polyline",
     P: "polyline",
+    q: "quadraticBezier",
+    Q: "quadraticBezier",
   };
 
   function handleKey(e) {
@@ -240,10 +319,31 @@ export function initDrawing(canvas) {
       drawMode === "polyline" &&
       polylinePoints.length > 0
     ) {
-      drawFunctions.polyline.finish();
+      polylinePoints = [];
       canvas.dispatchEvent(
         new CustomEvent("drawingend", { detail: { mode: drawMode } })
       );
+      return;
+    }
+
+    // 处理 Ctrl+C 结束贝塞尔曲线绘制
+    if (
+      e.ctrlKey &&
+      e.key === "c" &&
+      drawMode === "quadraticBezier" &&
+      (bezierPoints[1] || bezierPoints[2] || bezierPoints[3])
+    ) {
+      bezierPoints = { 1: null, 2: null, 3: null };
+      currentShape = null;
+      canvas.dispatchEvent(
+        new CustomEvent("drawingend", { detail: { mode: drawMode } })
+      );
+      return;
+    }
+
+    // 处理贝塞尔曲线模式下的数字键选择点
+    if (drawMode === "quadraticBezier" && e.key >= "1" && e.key <= "3") {
+      selectedBezierPoint = parseInt(e.key);
       return;
     }
 
@@ -252,7 +352,18 @@ export function initDrawing(canvas) {
     if (mode) {
       // 如果正在绘制折线，先结束当前折线
       if (drawMode === "polyline" && polylinePoints.length > 0) {
-        drawFunctions.polyline.finish();
+        polylinePoints = [];
+        canvas.dispatchEvent(
+          new CustomEvent("drawingend", { detail: { mode: drawMode } })
+        );
+      }
+      // 如果正在绘制贝塞尔曲线，先结束当前曲线
+      if (
+        drawMode === "quadraticBezier" &&
+        (bezierPoints[1] || bezierPoints[2] || bezierPoints[3])
+      ) {
+        bezierPoints = { 1: null, 2: null, 3: null };
+        currentShape = null;
         canvas.dispatchEvent(
           new CustomEvent("drawingend", { detail: { mode: drawMode } })
         );
